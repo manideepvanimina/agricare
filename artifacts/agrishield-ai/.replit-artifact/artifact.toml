@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "AgriShield AI"
+description = "A farmer-focused crop health app that turns a leaf scan into an explainable disease assessment, practical next steps, and an estimated future risk timeline. Demo data is clearly labeled; real AI, weather, and authoritative regional guidance can be integrated through service interfaces."
+version = "1.0.0"
+id = "artifacts/agrishield-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22561
+
+[services.development]
+run = "pnpm --filter @workspace/agrishield-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/agrishield-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/agrishield-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22561"
+BASE_PATH = "/"

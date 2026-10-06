@@ -1,0 +1,1 @@
+- [AgriShield estimate boundaries](agrishield-estimate-boundaries.md) — keep demos explicitly simulated; never imply diagnoses, prescribe chemicals, or invent authoritative support.

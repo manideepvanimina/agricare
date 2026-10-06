@@ -3,20 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AgriShield AI crop-health scans, history, alerts, and dashboard.
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: scans
+    description: Crop scan analysis and history
+  - name: dashboard
+    description: Farmer dashboard overview
+  - name: alerts
+    description: In-app crop risk alerts
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +29,114 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get crop health overview
+      responses:
+        "200":
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /scans:
+    get:
+      operationId: listScans
+      tags: [scans]
+      summary: List recent crop scans
+      responses:
+        "200":
+          description: Saved scans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Scan"
+    post:
+      operationId: createScan
+      tags: [scans]
+      summary: Create a clearly labeled demo crop estimate and save the field notes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanInput"
+      responses:
+        "201":
+          description: Scan report created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scan"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /scans/{scanId}:
+    get:
+      operationId: getScan
+      tags: [scans]
+      summary: Get one scan report
+      parameters:
+        - name: scanId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Scan report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scan"
+        "404":
+          description: Scan not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    delete:
+      operationId: deleteScan
+      tags: [scans]
+      summary: Delete a saved scan
+      parameters:
+        - name: scanId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Scan deleted
+        "404":
+          description: Scan not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [alerts]
+      summary: List current in-app alerts
+      responses:
+        "200":
+          description: Current crop alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
 components:
   schemas:
     HealthStatus:
@@ -31,6 +144,217 @@ components:
       properties:
         status:
           type: string
+      required: [status]
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    WeatherSnapshot:
+      type: object
+      required: [source, temperatureC, humidityPercent, rainfallMm, windKph, factors]
+      properties:
+        source:
+          type: string
+          enum: [demo, live]
+        temperatureC:
+          type: number
+        humidityPercent:
+          type: integer
+        rainfallMm:
+          type: number
+        windKph:
+          type: number
+        factors:
+          type: array
+          items:
+            type: string
+    ScanInput:
+      type: object
+      required: [crop]
+      properties:
+        crop:
+          type: string
+          enum: [Rice, Tomato, Cotton, Chilli, Maize, Wheat, Groundnut, Potato, Other]
+        imagePath:
+          type: ["string", "null"]
+        symptoms:
+          type: string
+          maxLength: 1000
+        notes:
+          type: string
+          maxLength: 1000
+        demoScenario:
+          type: string
+          enum: [auto, rice-fungal, tomato-leaf, cotton-pest, healthy, low-confidence]
+    Scan:
+      type: object
       required:
-        - status
-
+        - id
+        - createdAt
+        - crop
+        - disease
+        - scientificName
+        - confidence
+        - severity
+        - affectedPart
+        - symptoms
+        - notes
+        - alternatives
+        - explanation
+        - likelyFactors
+        - possibleFactors
+        - confirmFactors
+        - actionsNow
+        - actions48Hours
+        - actions7Days
+        - avoid
+        - monitor
+        - prevention
+        - riskScore
+        - riskLevel
+        - riskOutlook
+        - timeline
+        - weather
+        - analysisSource
+        - imagePath
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        crop:
+          type: string
+        disease:
+          type: string
+        scientificName:
+          type: string
+        confidence:
+          type: integer
+          minimum: 0
+          maximum: 100
+        severity:
+          type: string
+          enum: [Low, Moderate, High, Unclear]
+        affectedPart:
+          type: string
+        symptoms:
+          type: string
+        notes:
+          type: string
+        alternatives:
+          type: array
+          items:
+            type: string
+        explanation:
+          type: string
+        likelyFactors:
+          type: array
+          items:
+            type: string
+        possibleFactors:
+          type: array
+          items:
+            type: string
+        confirmFactors:
+          type: array
+          items:
+            type: string
+        actionsNow:
+          type: array
+          items:
+            type: string
+        actions48Hours:
+          type: array
+          items:
+            type: string
+        actions7Days:
+          type: array
+          items:
+            type: string
+        avoid:
+          type: array
+          items:
+            type: string
+        monitor:
+          type: array
+          items:
+            type: string
+        prevention:
+          type: array
+          items:
+            type: string
+        riskScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        riskLevel:
+          type: string
+          enum: [Low, Medium, High, Critical]
+        riskOutlook:
+          type: string
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/RiskTimelinePoint"
+        weather:
+          $ref: "#/components/schemas/WeatherSnapshot"
+        analysisSource:
+          type: string
+          enum: [demo]
+        imagePath:
+          type: ["string", "null"]
+    RiskTimelinePoint:
+      type: object
+      required: [label, detail, riskLevel]
+      properties:
+        label:
+          type: string
+        detail:
+          type: string
+        riskLevel:
+          type: string
+          enum: [Low, Medium, High, Critical]
+    Alert:
+      type: object
+      required: [id, title, detail, level, createdAt, scanId]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        level:
+          type: string
+          enum: [info, watch, urgent]
+        createdAt:
+          type: string
+          format: date-time
+        scanId:
+          type: ["string", "null"]
+    Dashboard:
+      type: object
+      required: [healthLabel, healthScore, currentRisk, totalScans, weather, recentScans, alerts]
+      properties:
+        healthLabel:
+          type: string
+        healthScore:
+          type: ["integer", "null"]
+        currentRisk:
+          type: string
+        totalScans:
+          type: integer
+        weather:
+          $ref: "#/components/schemas/WeatherSnapshot"
+        recentScans:
+          type: array
+          items:
+            $ref: "#/components/schemas/Scan"
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alert"
